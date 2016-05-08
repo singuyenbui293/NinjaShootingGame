@@ -294,6 +294,7 @@
 				84E18CD81CDAF5B700EDF3A1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
