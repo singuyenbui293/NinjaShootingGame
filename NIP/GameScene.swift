@@ -12,13 +12,20 @@ struct PhysicsCategory {
     static let None      : UInt32 = 0
     static let All       : UInt32 = UInt32.max
     static let badMonster   : UInt32 = 0b1 // 1
-    static let goodMonster : UInt32 = 0b100
-    static let Projectile: UInt32 = 0b10      // 2
+    static let goodMonster : UInt32 = 0b10
+    static let Projectile: UInt32 = 0b100      // 2
+    static let wall : UInt32 = 0b1000
 }
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let player = SKSpriteNode(imageNamed: "player")
+    var score  = 0
+    var HP = 5
+    let myLabel = SKLabelNode(fontNamed:"Chalkduster")
+    let wall = SKSpriteNode()
+    var HPLabel = SKLabelNode(fontNamed: "Chalkduster")
+    
     
     
     override func didMoveToView(view: SKView) {
@@ -26,6 +33,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         backgroundColor = SKColor.grayColor()
         player.position = CGPoint(x: self.frame.width * 0.5 , y: self.frame.height * 0.1)
         addChild(player)
+       
+       
+        myLabel.text = "\(score)"
+        myLabel.fontSize = 45
+        myLabel.position = CGPoint(x: self.frame.width / 2 , y: self.frame.height / 2 + self.frame.height / 2.5)
+        
+        self.addChild(myLabel)
+        
+        HPLabel.text = "\(HP)"
+        HPLabel.fontSize = 45
+        HPLabel.position = CGPoint(x: self.frame.width / 2 - self.frame.width / 2.5, y: self.frame.height / 2 + self.frame.height / 2.5)
+        self.addChild(HPLabel)
+        
+        
+        wall.size = CGSize(width: 0, height: self.frame.height)
+        wall.color = SKColor.redColor()
+        wall.position = CGPoint(x: 5 , y: self.frame.height / 2 )
+        
+        wall.physicsBody = SKPhysicsBody(rectangleOfSize: wall.size)
+        wall.physicsBody?.dynamic = true
+        wall.physicsBody?.categoryBitMask = PhysicsCategory.wall
+        wall.physicsBody?.contactTestBitMask = PhysicsCategory.badMonster
+        wall.physicsBody?.collisionBitMask = PhysicsCategory.None
+        self.addChild(wall)
+        
+
+        
         
         
         physicsWorld.gravity = CGVectorMake(0, 0)
@@ -155,6 +189,44 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         print("Hit")
         projectile.removeFromParent()
         monster.removeFromParent()
+        HP -= 1
+        self.HPLabel.text = "\(HP)"
+        
+        
+        if HP == 0 {
+        
+            _ = SKTransition.flipHorizontalWithDuration(0.5)
+            let scene = gameOverScene(size: (view?.bounds.size)!)
+            self.view?.presentScene(scene)
+            
+        }
+        
+
+    
+    }
+    
+    func badmonsterMiss (monster: SKSpriteNode, wall : SKSpriteNode) {
+        print("miss")
+        monster.removeFromParent()
+       
+       
+        HP -= 1
+        HPLabel.text = "\(HP)"
+        if HP == 0 {
+            _ = SKTransition.flipHorizontalWithDuration(0.5)
+            let scene = gameOverScene(size: (view?.bounds.size)!)
+            self.view?.presentScene(scene)
+        }
+    }
+    
+    func projectileCollideWitbadMonster(projectile: SKSpriteNode, monster: SKSpriteNode) {
+        print("Ohh NO")
+        projectile.removeFromParent()
+        monster.removeFromParent()
+        score += 1
+        print(score)
+        myLabel.text = "\(score)"
+        
     }
     
     func didBeginContact(contact: SKPhysicsContact) {
@@ -171,13 +243,44 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         // 2
-        if ((firstBody.categoryBitMask & PhysicsCategory.badMonster != 0) &&
+        if ((firstBody.categoryBitMask & PhysicsCategory.goodMonster != 0) &&
             (secondBody.categoryBitMask & PhysicsCategory.Projectile != 0)) {
-            projectileDidCollideWithMonster(firstBody.node as! SKSpriteNode, monster: secondBody.node as! SKSpriteNode)
+            
+            if let firstBody = firstBody.node , let secondBody = secondBody.node  {
+                projectileDidCollideWithMonster(firstBody as! SKSpriteNode, monster: secondBody as! SKSpriteNode)
+            } else {
+                
+            }
+            
         }
         
+        
+        if ((firstBody.categoryBitMask & PhysicsCategory.badMonster != 0) &&
+            (secondBody.categoryBitMask & PhysicsCategory.Projectile != 0)) {
+            
+            if let firstBody = firstBody.node , let secondBody = secondBody.node  {
+                projectileCollideWitbadMonster(firstBody as! SKSpriteNode, monster: secondBody as! SKSpriteNode)
+            } else {
+                
+            }
+            
+        }
+        
+        
+        if ((firstBody.categoryBitMask & PhysicsCategory.badMonster != 0) &&
+            (secondBody.categoryBitMask & PhysicsCategory.wall != 0)) {
+            
+            if let firstBody = firstBody.node , let secondBody = secondBody.node  {
+                badmonsterMiss(firstBody as! SKSpriteNode, wall: secondBody as! SKSpriteNode)
+            } else {
+                
+            }
+            
+        }
+
     }
-   
+    
+    
     override func update(currentTime: CFTimeInterval) {
         /* Called before each frame is rendered */
     }
